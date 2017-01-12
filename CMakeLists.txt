@@ -13,3 +13,9 @@ target_link_libraries (cloud_viewer ${PCL_LIBRARIES})
 
 add_executable (kinect_logger visualization/kinect_logger.cpp)
 target_link_libraries (kinect_logger ${PCL_LIBRARIES})
+
+add_executable (icp_viewer visualization/icp_viewer.cpp)
+target_link_libraries( icp_viewer ${PCL_LIBRARIES})
+
+add_executable (correspondence_viewer visualization/correspondence_viewer.cpp)
+target_link_libraries( correspondence_viewer ${PCL_LIBRARIES})
