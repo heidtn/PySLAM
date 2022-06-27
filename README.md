@@ -1,4 +1,4 @@
-# PiSLAM
+# PySLAM
 This is intended to be a lightweight 2D slam framework for educational purposes.  Some experiments can be found in visualization, but the actual SLAM sim is in PySLAM/world_sim.py
 
 to run call `python3 world_sim.py`
