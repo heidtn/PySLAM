@@ -6,7 +6,7 @@ from pyglet import shapes
 import heapq
 from dataclasses import dataclass, field
 from typing import Any
-import random
+import time
 from sklearn.manifold import trustworthiness
 
 
@@ -63,7 +63,7 @@ class World:
         for spike in spikes:
             grid[int(spike[1]), int(spike[0])] = (255, 0, 0)
 
-    def find_spikes(self, rays, thresh = 8, mindist=40):
+    def find_spikes(self, rays, thresh = 8, mindist=80):
         spikes = []
         for i in range(len(rays)):
             rayA = rays[(i-1)%len(rays)]
@@ -153,14 +153,11 @@ class graphSLAM:
 
         for feature in features:
             estimated_feature_location = feature + estimated_position
-            print("feature loc: ", estimated_feature_location)
             key, position = self.landmark_database.find_matching_landmark(estimated_feature_location)
             # if there are existing landmarks for this position, add them to the list
             if key is not None:
-                print("got landmark match!")
                 self.num_observations += 1
                 self.matching_landmarks.append(key)
-                print("LEngths: ", len(self.deltas), len(self.position_landmarks))
                 self.position_landmarks[len(self.deltas) - 1].append(key)
                 self.landmark_deltas[len(self.deltas) - 1].append(feature)
                 self.unique_landmarks.add(key)
@@ -245,15 +242,23 @@ class graphSLAM:
         #print(mat.shape, vec.shape)
 
         res = np.linalg.lstsq(mat, vec)
-        print("res: ", res[0])
         new_positions = []
         for i in range(len(self.deltas)):
             new_pos = np.array((res[0][i], res[0][i+len(self.deltas)]))
             new_positions.append(new_pos)
 
+        # Update all the landmarks
         for key, col in landmark_keys.items():
             position = np.array([res[0][col], res[0][col+1]])
             self.landmark_database.update_position(key, position)
+
+        # Update all the deltas
+        #for i, position in enumerate(new_positions[1:]):
+            #print("subtracting: ", new_positions[i], new_positions[i-1], new_positions[i] - new_positions[i-1])
+            #self.deltas[i+1] = new_positions[i+1] - new_positions[i]
+            
+        #print("deltas: \n", self.deltas, "\n", new_deltas, "\n", new_positions)
+        print(f"processed {len(self.deltas)} positions and {len(self.unique_landmarks)} unique landmarks")
 
         self.last_estimated_position = new_positions[-1]
         return np.array(new_positions)
@@ -320,6 +325,7 @@ def on_mouse_press(x, y, button, modifiers):
         dedrec_positions.append(np.array((x, y)))
         slam.set_offset(np.array(inverted))
     else:
+        start_time = time.time()
         rays = np.array(world.cast_ideal_rays((x, y), 100))
         rays[:, 1] = world.world_grid.shape[0] - rays[:, 1]
         spikes = np.array(world.find_spikes(rays))
@@ -335,7 +341,8 @@ def on_mouse_press(x, y, button, modifiers):
         
         estimated_positions = slam.add_position(delta, relative_spikes)
         estimated_positions[:,1] = world.world_grid.shape[0] - estimated_positions[:,1]
-        print("final: ", estimated_positions, true_positions)
+        end_time = time.time()
+        print(f"Total time to process: {end_time-start_time} seconds")
 
     
 
